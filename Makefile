@@ -1,8 +1,8 @@
 build:
-	 @cd src && go build -o ../bin/j-bank
+	 @cd src && go build -o ../bin/gobank
 
 run: build
-	@./bin/j-bank
+	@./bin/gobank
 
 test: 
 	@go test -v ./...

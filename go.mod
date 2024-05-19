@@ -1,4 +1,4 @@
-module github.com/elieudomaia/j-bank
+module github.com/elieudomaia/gobank
 
 go 1.20
 

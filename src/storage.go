@@ -18,7 +18,7 @@ type PostgresStorage struct {
 }
 
 func NewPostgresStorage() (*PostgresStorage, error) {
-	connStr := "user=jbank dbname=jbank password=jbank sslmode=disable"
+	connStr := "user=gobank dbname=gobank password=gobank sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
