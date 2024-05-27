@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -25,7 +26,7 @@ func NewAPIServer(listenAddr string, storage Storage) *APIServer {
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
 	router.HandleFunc("/account", makeHttpHandleFunc(s.HandleAccount))
-	router.HandleFunc("/account/{id}", makeHttpHandleFunc(s.handleGetAccount))
+	router.HandleFunc("/account/{id}", makeHttpHandleFunc(s.HandleAccountWithId))
 
 	log.Println("Starting server on", s.listenAddr)
 
@@ -35,8 +36,20 @@ func (s *APIServer) Run() {
 func (s *APIServer) HandleAccount(w http.ResponseWriter, r *http.Request) error {
 	if r.Method == http.MethodPost {
 		return s.handleCreateAccount(w, r)
+	} else if r.Method == http.MethodGet {
+		return s.handleListAccounts(w, r)
+	}
+
+	return fmt.Errorf("method not allowed")
+}
+
+func (s *APIServer) HandleAccountWithId(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == http.MethodGet {
+		return s.handleGetAccount(w, r)
 	} else if r.Method == http.MethodDelete {
 		return s.handleDeleteAccount(w, r)
+	} else if r.Method == http.MethodPut {
+		return s.handleUpdateAccount(w, r)
 	}
 
 	return fmt.Errorf("method not allowed")
@@ -75,7 +88,58 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	id := mux.Vars(r)["id"]
+	idint, err := strconv.Atoi(id)
+	if err != nil {
+		return fmt.Errorf("invalid id")
+	}
+
+	err = s.storage.DeleteAccount(idint)
+	if err != nil {
+		return err
+	}
+
+	return WriteJSON(w, http.StatusOK, nil)
+}
+
+func (s *APIServer) handleListAccounts(w http.ResponseWriter, r *http.Request) error {
+	accounts, err := s.storage.ListAccounts()
+	if err != nil {
+		return errors.New("erro trying list accounts")
+	}
+
+	return WriteJSON(w, http.StatusOK, accounts)
+}
+
+func (s *APIServer) handleUpdateAccount(w http.ResponseWriter, r *http.Request) error {
+	id := mux.Vars(r)["id"]
+	idint, err := strconv.Atoi(id)
+	if err != nil {
+		return fmt.Errorf("invalid id")
+	}
+
+	savedAccount, err := s.storage.GetAccountById(idint)
+	if err != nil {
+		return err
+	}
+	if savedAccount == nil {
+		return fmt.Errorf("account not found")
+	}
+
+	accountRequest := &UpdateAccountRequest{}
+	if err := json.NewDecoder(r.Body).Decode(accountRequest); err != nil {
+		return err
+	}
+
+	savedAccount.FirstName = accountRequest.FirstName
+	savedAccount.LastName = accountRequest.LastName
+
+	err = s.storage.UpdateAccount(savedAccount)
+	if err != nil {
+		return err
+	}
+
+	return WriteJSON(w, http.StatusOK, savedAccount)
 }
 
 func (s *APIServer) handleTransfer(w http.ResponseWriter, r *http.Request) error {
