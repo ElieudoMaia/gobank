@@ -100,7 +100,7 @@ func (s *PostgresStorage) GetAccountById(id int) (*Account, error) {
 }
 
 func (s *PostgresStorage) ListAccounts() ([]*Account, error) {
-	rows, err := s.db.Query("SELECT id, first_name, last_name FROM accounts")
+	rows, err := s.db.Query("SELECT id, first_name, last_name, balance FROM accounts")
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (s *PostgresStorage) ListAccounts() ([]*Account, error) {
 	accounts := []*Account{}
 	for rows.Next() {
 		account := &Account{}
-		err := rows.Scan(&account.ID, &account.FirstName, &account.LastName)
+		err := rows.Scan(&account.ID, &account.FirstName, &account.LastName, &account.Balance)
 		if err != nil {
 			return nil, err
 		}
