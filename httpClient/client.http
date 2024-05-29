@@ -3,7 +3,7 @@ POST http://localhost:8080/account HTTP/1.1
 Content-Type: application/json
 
 {
-    "first_name": "Elieudo",
+    "first_name": "Maria",
     "last_name": "Maia"
 }
 
@@ -26,3 +26,14 @@ Content-Type: application/json
 
 ### Delete account
 DELETE http://localhost:8080/account/34 HTTP/1.1
+
+
+### Transfer
+PATCH http://localhost:8080/transfer
+Content-Type: application/json
+
+{
+    "from_account_id": 1,
+    "to_account_id": 36,
+    "amount": 10
+}

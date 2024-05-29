@@ -12,6 +12,7 @@ type Storage interface {
 	UpdateAccount(*Account) error
 	GetAccountById(int) (*Account, error)
 	ListAccounts() ([]*Account, error)
+	SaveBalance(accountFrom *Account, accountTo *Account) error
 }
 
 type PostgresStorage struct {
@@ -34,14 +35,14 @@ func (s *PostgresStorage) InitDB() error {
 		return err
 	}
 
-	err = s.RunMigrations()
+	err = s.runMigrations()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *PostgresStorage) RunMigrations() error {
+func (s *PostgresStorage) runMigrations() error {
 	_, err := s.db.Exec(`
 		CREATE TABLE IF NOT EXISTS accounts (
 			id SERIAL PRIMARY KEY,
@@ -115,4 +116,18 @@ func (s *PostgresStorage) ListAccounts() ([]*Account, error) {
 		accounts = append(accounts, account)
 	}
 	return accounts, nil
+}
+
+func (s *PostgresStorage) SaveBalance(accountFrom *Account, accountTo *Account) error {
+	_, err := s.db.Query("UPDATE accounts SET balance = $1 WHERE id = $2", accountFrom.Balance, accountFrom.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Query("UPDATE accounts SET balance = $1 WHERE id = $2", accountTo.Balance, accountTo.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

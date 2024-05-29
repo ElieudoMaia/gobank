@@ -27,6 +27,7 @@ func (s *APIServer) Run() {
 	router := mux.NewRouter()
 	router.HandleFunc("/account", makeHttpHandleFunc(s.HandleAccount))
 	router.HandleFunc("/account/{id}", makeHttpHandleFunc(s.HandleAccountWithId))
+	router.HandleFunc("/transfer", makeHttpHandleFunc(s.handleTransfer))
 
 	log.Println("Starting server on", s.listenAddr)
 
@@ -143,7 +144,34 @@ func (s *APIServer) handleUpdateAccount(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *APIServer) handleTransfer(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	if r.Method != http.MethodPatch {
+		return errors.New("method not allowed")
+	}
+
+	transferRequest := &TransferRequest{}
+	if err := json.NewDecoder(r.Body).Decode(transferRequest); err != nil {
+		return err
+	}
+
+	accountFrom, err := s.storage.GetAccountById(transferRequest.FromAccountID)
+	if err != nil {
+		return errors.New("account from not found")
+	}
+
+	accountTo, err := s.storage.GetAccountById(transferRequest.ToAccountID)
+	if err != nil {
+		return errors.New("account to not found")
+	}
+
+	accountFrom.Balance = accountFrom.Balance - transferRequest.Amount
+	accountTo.Balance = accountTo.Balance + transferRequest.Amount
+
+	fmt.Print(accountFrom)
+	fmt.Print(accountTo)
+
+	err = s.storage.SaveBalance(accountFrom, accountTo)
+
+	return err
 }
 
 // helper to write http json reponse
