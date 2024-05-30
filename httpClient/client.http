@@ -13,6 +13,7 @@ GET http://localhost:8080/account HTTP/1.1
 
 ### Get account by id
 GET http://localhost:8080/account/1 HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJRCI6MSwiYWNjb3VudE51bWJlciI6NjI2NTU4MTI2MzQ0OTkyNTgxOSwiYWNjb3VudFVzZXIiOiJFbGlldWRvIn0.DKWWBo4VsuBU0wJ2dfsgqOhX_AdDcaQgSpNKrRYe8vo
 
 
 ### Update account

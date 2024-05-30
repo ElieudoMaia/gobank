@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -26,7 +27,7 @@ func NewAPIServer(listenAddr string, storage Storage) *APIServer {
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
 	router.HandleFunc("/account", makeHttpHandleFunc(s.HandleAccount))
-	router.HandleFunc("/account/{id}", makeHttpHandleFunc(s.HandleAccountWithId))
+	router.HandleFunc("/account/{id}", withAuthentication(makeHttpHandleFunc(s.HandleAccountWithId)))
 	router.HandleFunc("/transfer", makeHttpHandleFunc(s.handleTransfer))
 	router.HandleFunc("/signin", makeHttpHandleFunc(s.handleSignIn))
 
@@ -226,5 +227,36 @@ func makeHttpHandleFunc(c Controller) http.HandlerFunc {
 		if err := c(w, r); err != nil {
 			WriteJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
 		}
+	}
+}
+
+var tokenRegex = regexp.MustCompile(`[^\s]+`)
+
+func withAuthentication(httpHandler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		header := r.Header["Authorization"]
+		if header == nil {
+			response := struct {
+				Message string `json:"message"`
+			}{Message: "missing token"}
+			WriteJSON(w, http.StatusUnauthorized, response)
+			return
+		}
+		headerValue := tokenRegex.FindAllString(header[0], -1)
+
+		token := headerValue[1]
+
+		accountID, err := VerifyToken(token)
+		if err != nil {
+			response := struct {
+				Message string `json:"message"`
+			}{Message: "invalid token"}
+			WriteJSON(w, http.StatusUnauthorized, response)
+			return
+		}
+
+		log.Print("Request From AccountID = ", accountID)
+
+		httpHandler(w, r)
 	}
 }
