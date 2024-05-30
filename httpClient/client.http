@@ -37,3 +37,13 @@ Content-Type: application/json
     "to_account_id": 36,
     "amount": 10
 }
+
+
+### SignIn
+POST http://localhost:8080/signin HTTP/1.1
+Content-Type: application/json
+
+{
+    "account_number": 6265581263449925819,
+    "password": "123456"
+}

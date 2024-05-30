@@ -40,3 +40,8 @@ type TransferRequest struct {
 	ToAccountID   int     `json:"to_account_id"`
 	Amount        float64 `json:"amount"`
 }
+
+type SignInRequest struct {
+	AccountNumber int    `json:"account_number"`
+	Password      string `json:"password"`
+}

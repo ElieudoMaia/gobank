@@ -28,6 +28,7 @@ func (s *APIServer) Run() {
 	router.HandleFunc("/account", makeHttpHandleFunc(s.HandleAccount))
 	router.HandleFunc("/account/{id}", makeHttpHandleFunc(s.HandleAccountWithId))
 	router.HandleFunc("/transfer", makeHttpHandleFunc(s.handleTransfer))
+	router.HandleFunc("/signin", makeHttpHandleFunc(s.handleSignIn))
 
 	log.Println("Starting server on", s.listenAddr)
 
@@ -172,6 +173,36 @@ func (s *APIServer) handleTransfer(w http.ResponseWriter, r *http.Request) error
 	err = s.storage.SaveBalance(accountFrom, accountTo)
 
 	return err
+}
+
+func (s *APIServer) handleSignIn(w http.ResponseWriter, r *http.Request) error {
+	signInRequest := &SignInRequest{}
+
+	if err := json.NewDecoder(r.Body).Decode(signInRequest); err != nil {
+		return err
+	}
+
+	account, err := s.storage.GetAccountByNumber(signInRequest.AccountNumber)
+	if err != nil {
+		return err
+	}
+
+	if account == nil {
+		return errors.New("account not found")
+	}
+
+	// check password
+
+	token, err := GenerateJWTToken(account)
+	if err != nil {
+		return err
+	}
+
+	response := struct {
+		AccessToken string `json:"access_token"`
+	}{AccessToken: token}
+
+	return WriteJSON(w, http.StatusOK, response)
 }
 
 // helper to write http json reponse

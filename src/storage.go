@@ -13,6 +13,7 @@ type Storage interface {
 	GetAccountById(int) (*Account, error)
 	ListAccounts() ([]*Account, error)
 	SaveBalance(accountFrom *Account, accountTo *Account) error
+	GetAccountByNumber(int) (*Account, error)
 }
 
 type PostgresStorage struct {
@@ -130,4 +131,15 @@ func (s *PostgresStorage) SaveBalance(accountFrom *Account, accountTo *Account) 
 	}
 
 	return nil
+}
+
+func (s *PostgresStorage) GetAccountByNumber(accountnumber int) (*Account, error) {
+	row := s.db.QueryRow("SELECT * FROM accounts WHERE number = $1", accountnumber)
+	account := &Account{}
+	err := row.Scan(&account.ID, &account.FirstName, &account.LastName, &account.Number, &account.Balance)
+	if err != nil {
+		return nil, err
+	}
+
+	return account, nil
 }
