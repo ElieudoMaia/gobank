@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
 )
@@ -14,6 +15,7 @@ func GenerateJWTToken(account *Account) (string, error) {
 		"ID":            account.ID,
 		"accountNumber": account.Number,
 		"accountUser":   account.FirstName,
+		"exp":           time.Now().Add(time.Hour * 1).Unix(),
 	})
 
 	hmacSecret := []byte(secret)

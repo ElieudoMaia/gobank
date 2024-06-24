@@ -26,9 +26,9 @@ func NewAPIServer(listenAddr string, storage Storage) *APIServer {
 
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
-	router.HandleFunc("/account", makeHttpHandleFunc(s.HandleAccount))
+	router.HandleFunc("/account", withAuthentication(makeHttpHandleFunc(s.HandleAccount)))
 	router.HandleFunc("/account/{id}", withAuthentication(makeHttpHandleFunc(s.HandleAccountWithId)))
-	router.HandleFunc("/transfer", makeHttpHandleFunc(s.handleTransfer))
+	router.HandleFunc("/transfer", withAuthentication(makeHttpHandleFunc(s.handleTransfer)))
 	router.HandleFunc("/signin", makeHttpHandleFunc(s.handleSignIn))
 
 	log.Println("Starting server on", s.listenAddr)
@@ -105,7 +105,7 @@ func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) 
 	return WriteJSON(w, http.StatusOK, nil)
 }
 
-func (s *APIServer) handleListAccounts(w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleListAccounts(w http.ResponseWriter, _ *http.Request) error {
 	accounts, err := s.storage.ListAccounts()
 	if err != nil {
 		return errors.New("erro trying list accounts")
