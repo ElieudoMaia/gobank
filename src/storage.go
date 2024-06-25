@@ -48,15 +48,40 @@ func (s *PostgresStorage) runMigrations() error {
 	_, err := s.db.Exec(`
 		CREATE TABLE IF NOT EXISTS accounts (
 			id SERIAL PRIMARY KEY,
-			first_name TEXT,
-			last_name TEXT,
+			first_name varchar(255),
+			last_name varchar(255),
+			password varchar(255),
 			number BIGINT,
-			balance FLOAT
+			balance FLOAT,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		)
 	`)
 	if err != nil {
 		return err
 	}
+
+	account := NewAccount("Elieudo", "Maia", "123456")
+	account.Number = 7844426807732681064
+
+	row := s.db.QueryRow("SELECT * FROM accounts where number = $1 LIMIT 1", account.Number)
+	err = row.Scan(&account.ID, &account.FirstName, &account.LastName, &account.Password, &account.Number, &account.Balance, &account.CreatedAt)
+	if err == nil {
+		return nil
+	}
+
+	hashedPassword, err := HashPassword(account.Password)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec(`INSERT INTO accounts (first_name, last_name, password, number, balance) VALUES ($1, $2, $3, $4, $5)`,
+		account.FirstName,
+		account.LastName,
+		hashedPassword,
+		account.Number,
+		account.Balance,
+	)
+
 	return err
 }
 
@@ -65,11 +90,12 @@ func (s *PostgresStorage) CreateAccount(account *Account) error {
 	INSERT INTO accounts (
 		first_name,
 		last_name,
+		password,
 		number,
 		balance
 	)
 	VALUES ($1, $2, $3, $4)`,
-		account.FirstName, account.LastName, account.Number, account.Balance,
+		account.FirstName, account.LastName, account.Password, account.Number, account.Balance,
 	)
 
 	return err
@@ -137,7 +163,7 @@ func (s *PostgresStorage) SaveBalance(accountFrom *Account, accountTo *Account) 
 func (s *PostgresStorage) GetAccountByNumber(accountnumber int) (*Account, error) {
 	row := s.db.QueryRow("SELECT * FROM accounts WHERE number = $1", accountnumber)
 	account := &Account{}
-	err := row.Scan(&account.ID, &account.FirstName, &account.LastName, &account.Number, &account.Balance)
+	err := row.Scan(&account.ID, &account.FirstName, &account.LastName, &account.Password, &account.Number, &account.Balance, &account.CreatedAt)
 	if err != nil {
 		return nil, errors.New("account not found")
 	}

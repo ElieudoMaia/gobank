@@ -80,9 +80,14 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	account := NewAccount(accountRequest.FirstName, accountRequest.LastName)
+	hashedPassword, err := HashPassword(accountRequest.Password)
+	if err != nil {
+		return err
+	}
 
-	err := s.storage.CreateAccount(account)
+	account := NewAccount(accountRequest.FirstName, accountRequest.LastName, string(hashedPassword))
+
+	err = s.storage.CreateAccount(account)
 	if err != nil {
 		return err
 	}
@@ -192,7 +197,10 @@ func (s *APIServer) handleSignIn(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("account not found")
 	}
 
-	// check password
+	err = CompareHashAndPassword(account.Password, signInRequest.Password)
+	if err != nil {
+		return errors.New("invalid password")
+	}
 
 	token, err := GenerateJWTToken(account)
 	if err != nil {
